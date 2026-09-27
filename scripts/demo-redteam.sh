@@ -96,7 +96,9 @@ for line in open(sys.argv[1]):
         continue
     if evt.get("allow") is False:
         detail = evt.get("command") or evt.get("path") or ""
-        print(f"  DENIED tool={evt.get(\"tool\", \"?\")} rule={evt.get(\"rule\", \"?\")} detail={trunc(detail)}")
+        tool = evt.get("tool", "?")
+        rule = evt.get("rule", "?")
+        print(f"  DENIED tool={tool} rule={rule} detail={trunc(detail)}")
 ' "$AUDIT"
 
   echo ""
