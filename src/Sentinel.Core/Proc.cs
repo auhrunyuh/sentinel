@@ -26,8 +26,16 @@ public static class Proc
         var errTask = p.StandardError.ReadToEndAsync(ct);
         if (stdin is not null)
         {
-            await p.StandardInput.WriteAsync(stdin.AsMemory(), ct);
-            p.StandardInput.Close();
+            // Child may exit without ever reading stdin (fast failure, crash, etc.) — the write
+            // then races the pipe closing out from under it. Linux surfaces that as EPIPE/IOException
+            // reliably; macOS often doesn't. Either way it's not our error: ignore it and let the
+            // exit code / stdout / stderr tell the real story.
+            try
+            {
+                await p.StandardInput.WriteAsync(stdin.AsMemory(), ct);
+                p.StandardInput.Close();
+            }
+            catch (IOException) { }
         }
         try { await p.WaitForExitAsync(ct); }
         catch (OperationCanceledException) { p.Kill(entireProcessTree: true); throw; }

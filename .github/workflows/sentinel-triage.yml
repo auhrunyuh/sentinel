@@ -12,11 +12,19 @@ jobs:
   triage:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.BOB_API_KEY != '' }}
     steps:
+      - name: Check for BOB_API_KEY
+        if: env.HAS_KEY != 'true'
+        run: echo "::notice::BOB_API_KEY secret not set — skipping triage."
+
       - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - uses: ./action
+        if: env.HAS_KEY == 'true'
         with:
           bob-api-key: ${{ secrets.BOB_API_KEY }}

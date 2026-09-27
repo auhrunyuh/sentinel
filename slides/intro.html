@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sentinel Intro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent: #0f62fe; --bg: #0a0e14; --panel: #131a24; --fg: #e6ecf5; --dim: #8b96a8; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100vw; height: 100vh; background: var(--bg); font-family: 'IBM Plex Sans', sans-serif; color: var(--fg); }
+  .scroller { width: 100vw; height: 100vh; overflow-y: auto; scroll-snap-type: y mandatory; }
+  section {
+    height: 100vh; scroll-snap-align: start;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel, .final {
+    width: min(1760px, 92vw);
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .panel.visible, .final.visible { opacity: 1; transform: translateY(0); }
+  .final { text-align: center; }
+  .kicker { color: var(--accent); font-weight: 700; font-size: clamp(14px, 1.6vw, 30px); letter-spacing: 4px; text-transform: uppercase; margin-bottom: 18px; }
+  h1 { font-size: clamp(26px, 3.3vw, 62px); font-weight: 700; line-height: 1.25; max-width: 100%; }
+  p.body { font-size: clamp(15px, 1.7vw, 30px); color: var(--dim); margin-top: 22px; max-width: 100%; line-height: 1.5; }
+  .chips { display: flex; gap: clamp(8px, 1.2vw, 20px); margin-top: 34px; flex-wrap: wrap; }
+  .chip { background: var(--panel); border: 1px solid var(--accent); color: var(--fg); font-size: clamp(13px, 1.3vw, 24px); font-weight: 600; padding: clamp(8px,1vw,14px) clamp(14px,1.6vw,24px); border-radius: 999px; }
+  .built { display: flex; gap: clamp(16px, 3vw, 60px); margin-top: 30px; flex-wrap: wrap; }
+  .built .col { flex: 1; min-width: 240px; background: var(--panel); border-left: 4px solid var(--accent); border-radius: 8px; padding: clamp(14px,1.8vw,28px) clamp(16px,2vw,32px); font-size: clamp(13px, 1.5vw, 26px); color: var(--dim); line-height: 1.5; }
+  .built .col strong { color: var(--fg); }
+  .final .title { font-size: clamp(24px, 3vw, 48px); font-weight: 700; margin-bottom: 16px; }
+  .final .footer { font-size: clamp(13px, 1.4vw, 22px); color: var(--dim); letter-spacing: 1px; }
+  .final .footer span { color: var(--accent); font-weight: 600; }
+  .counter { position: fixed; bottom: 20px; right: 24px; font-size: 14px; color: var(--dim); letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="scroller" id="scroller">
+
+  <section id="s1">
+    <div class="panel">
+      <div class="kicker">Problem</div>
+      <h1>AI agents can fix production bugs. But headless agents run every tool unchecked.</h1>
+      <p class="body">They can fake tests, leak secrets, bypass hooks. Nobody ships "AI fixed it" without proof.</p>
+    </div>
+  </section>
+
+  <section id="s2">
+    <div class="panel">
+      <div class="kicker">Solution</div>
+      <h1>Sentinel: alert &rarr; failing repro test &rarr; verified fix.</h1>
+      <div class="chips">
+        <div class="chip">Fail-to-pass gate</div>
+        <div class="chip">Agent firewall on Bob hooks</div>
+        <div class="chip">Hidden tests catch false fixes</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s3">
+    <div class="panel">
+      <div class="kicker">Built with IBM Bob</div>
+      <div class="built">
+        <div class="col"><strong>Bob is the engine:</strong> sentinel-fixer mode, PreToolUse policy hooks, --resume retry loop.</div>
+        <div class="col"><strong>Bob built it too:</strong> /init, eval harness, red-team fixture, and 3 firewall rules from incidents where Bob evaded our controls.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s4">
+    <div class="final">
+      <div class="title">Sentinel</div>
+      <div class="footer">Sentinel &middot; <span>github.com/auhrunyuh/sentinel</span> &middot; IBM Bob 2.0 Hackathon</div>
+    </div>
+  </section>
+
+</div>
+<div class="counter" id="counter">1 / 4</div>
+
+<script>
+  var scroller = document.getElementById('scroller');
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section'));
+  var counter = document.getElementById('counter');
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      var content = entry.target.querySelector('.panel, .final');
+      if (entry.isIntersecting) {
+        content.classList.add('visible');
+        counter.textContent = (sections.indexOf(entry.target) + 1) + ' / ' + sections.length;
+      }
+    });
+  }, { threshold: 0.6 });
+  sections.forEach(function (s) { io.observe(s); });
+
+  document.addEventListener('keydown', function (e) {
+    var idx = sections.findIndex(function (s) {
+      var r = s.getBoundingClientRect();
+      return r.top >= -10 && r.top < window.innerHeight / 2;
+    });
+    if (idx === -1) idx = 0;
+    if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault();
+      sections[Math.min(idx + 1, sections.length - 1)].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault();
+      sections[Math.max(idx - 1, 0)].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+</script>
+</body>
+</html>
