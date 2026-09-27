@@ -36,6 +36,15 @@ public class SentinelTests
         Assert.Equal(hit, SecretScanner.ScanText("x.cs", line).Any(f => f.Severity >= Severity.High));
 
     [Fact]
+    public void Scanner_HitsAwsKey()
+    {
+        // Build the key at runtime so the literal never appears in source and the scanner can't flag this file.
+        var fakeKey = "AKIA" + "ABCDEFGHIJKLMNOP";
+        var line = $"var key = \"{fakeKey}\";";
+        Assert.Contains(SecretScanner.ScanText("x.cs", line), f => f.Rule == "aws-access-key" && f.Severity >= Severity.High);
+    }
+
+    [Fact]
     public void ParseResult_SkipsNoise()
     {
         var r = Bob.ParseResult("""
@@ -116,8 +125,21 @@ public class SentinelTests
         Assert.Equal("no-test-tamper", Eval("""{"tool_name":"apply_diff","input":{"path":"tests/App.Tests/FooTests.cs","diff":"-a\n+b"}}""").Rule);
         Assert.True(Eval("""{"tool_name":"write_to_file","input":{"path":"tests/App.Tests/BarTests.cs","content":"// new"}}""").Allow);
         Assert.Equal("outside-workspace", Eval("""{"tool_name":"read_file","input":{"path":"~/.bob/settings.json"}}""").Rule);
-        Assert.Equal("no-secret-write", Eval("""{"tool_name":"write_to_file","input":{"path":"src/C.cs","content":"var k = \"AKIAABCDEFGHIJKLMNOP\";"}}""").Rule);
+        Assert.Equal("no-secret-write", Eval($"{{\"tool_name\":\"write_to_file\",\"input\":{{\"path\":\"src/C.cs\",\"content\":\"var k = \\\"{"AKIA" + "ABCDEFGHIJKLMNOP"}\\\";\"}}}}").Rule);
         Assert.True(Eval("""{"tool_name":"write_to_file","input":{"path":"src/C.cs","content":"class C {}"}}""").Allow);
+
+        // no-hook-bypass: --no-verify and -n on commit/merge, and -c core.hooksPath override
+        Assert.Equal("no-hook-bypass", Eval("""{"tool_name":"execute_command","input":{"command":"git commit --no-verify -m msg"}}""").Rule);
+        Assert.Equal("no-hook-bypass", Eval("""{"tool_name":"execute_command","input":{"command":"git commit -n -m msg"}}""").Rule);
+        Assert.Equal("no-hook-bypass", Eval("""{"tool_name":"execute_command","input":{"command":"git merge --no-verify feature"}}""").Rule);
+        Assert.Equal("no-hook-bypass", Eval("""{"tool_name":"execute_command","input":{"command":"git -c core.hooksPath=/dev/null commit -m msg"}}""").Rule);
+        Assert.Equal("no-hook-bypass", Eval("""{"tool_name":"execute_command","input":{"command":"git -c core.hooksPath= commit -m msg"}}""").Rule);
+        // git push --no-verify hits no-git-rewrite first (push is already blocked); bypass is still denied
+        Assert.Equal("no-git-rewrite", Eval("""{"tool_name":"execute_command","input":{"command":"git push --no-verify origin main"}}""").Rule);
+        // safe: plain commit/merge without bypass flags
+        Assert.True(Eval("""{"tool_name":"execute_command","input":{"command":"git commit -m msg"}}""").Allow);
+        Assert.True(Eval("""{"tool_name":"execute_command","input":{"command":"git merge feature"}}""").Allow);
+        Assert.True(Eval("""{"tool_name":"execute_command","input":{"command":"git log --no-verify"}}""").Allow);
     }
 
     [Fact]
