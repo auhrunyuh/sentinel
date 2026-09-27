@@ -18,7 +18,7 @@ public static class Policy
         ("no-network", new(@"\b(curl|wget|nc|ssh|scp)\b|invoke-webrequest", I), "Network access from agent commands is blocked."),
         ("no-env-dump", new(@"\bprintenv\b|(^|[;&|(]\s*)(env|set)\s*($|[;&|)])|BOB_API_KEY|/environ\b", I), "Dumping the environment can leak secrets."),
         ("no-git-rewrite", new(@"(^|[;&|])\s*git\s+(?:(?:push|rebase|config)\b|reset\s+--hard\b|commit\b[^;&|]*--amend\b)", I), "Git history/remote/config changes are reserved for humans."),
-        ("no-hook-bypass", new(@"(^|[;&|])\s*git\s+(?:-c\s+core\.hookspath\s*=|(?:commit|push|merge)\b[^;&|]*(?:--no-verify\b|-[a-z]*n[a-z]*))", I), "Bypassing git hooks is not allowed."),
+        ("no-hook-bypass", new(@"(^|[;&|])\s*git\s+(?:-c\s+core\.hookspath\s*=|(?:commit|push|merge)\b[^;&|]*(?:--no-verify\b|\s-[a-z]*n[a-z]*(?=[\s;&|]|$)))", I), "Bypassing git hooks is not allowed."),
         ("no-destructive-rm", new(@"\brm\s+(-[\w-]*\s+)*(-\w*(rf|fr)\w*|--recursive\s+--force|--force\s+--recursive|-r\s+-f|-f\s+-r)\s+(-[\w-]*\s+)*[""']?(/|~|\.|\.\.)/?\*?[""']?(\s|$|[;&|])"),
             "Recursive force-delete of root, home or the workspace is blocked."),
         ("no-new-deps", new(@"\bdotnet\s+add\b.*\bpackage\b|\bnpm\s+(i|install|add)\b|\b(yarn|pnpm)\s+add\b|\bpip3?\s+install\b", I), "Adding dependencies needs human review."),

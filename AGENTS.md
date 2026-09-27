@@ -47,7 +47,7 @@ The running `sentinel hook pre-tool` enforces policies that **block agents from*
 - **`Sentinel.Cli/Program.cs`**: top-level statements dispatch subcommands: `review`, `hook pre-tool|post-tool|stop`, `watch`, `audit verify`, `gate`, `fix`
 - **`Bob.cs`**: wraps `bob run --mode <mode> --format json` via `Proc`; reads result by scanning stdout lines in reverse for the last `{"type":"result",...}` JSON line — earlier lines are noise
 - **`Gate.cs`**: fail-to-pass gate — uses `git worktree` to run new tests on the base commit (must fail) then on HEAD (must pass); test files are copied into the worktree before running
-- **`Policy.cs`** + **`Audit.cs`**: `Policy.Evaluate()` is the hook engine; `Audit.Append()` writes to `.sentinel/audit.jsonl` (hash-chained, SHA256 of `prev_hash + ts + eventJson`)
+- **`Policy.cs`** (contains both `Policy` and `Audit`): `Policy.Evaluate()` is the hook engine; `Audit.Append()` writes to `.sentinel/audit.jsonl` (hash-chained, SHA256 of `prev_hash + ts + eventJson`)
 - **`Review.cs`**: LLM reviewers (`sentinel-sec-review`, `sentinel-perf-review`) run via Bob with `--max-turns 1`, output must be `<verdict>{...}</verdict>`; results cached by SHA256 of `mode + prompt` in `.sentinel/cache/`
 - **`SecretScanner`**: always-on regex scanner, no LLM; runs before any LLM reviewer
 
