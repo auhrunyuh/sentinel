@@ -8,7 +8,7 @@ namespace Sentinel.Core;
 public sealed record PolicyDecision(bool Allow, string? Rule = null, string? Reason = null);
 
 /// <summary>PreToolUse rules for an agent working in <c>root</c>. First matching deny wins.</summary>
-public static class Policy
+public static partial class Policy
 {
     const RegexOptions I = RegexOptions.IgnoreCase;
     static readonly string[] ProtectedDirs = [".git", ".bob", ".githooks", ".sentinel"];
@@ -23,6 +23,27 @@ public static class Policy
             "Recursive force-delete of root, home or the workspace is blocked."),
         ("no-new-deps", new(@"\bdotnet\s+add\b.*\bpackage\b|\bnpm\s+(i|install|add)\b|\b(yarn|pnpm)\s+add\b|\bpip3?\s+install\b", I), "Adding dependencies needs human review."),
         ("protected-path", new(@"(^|[\s'""=/:])\.(git|bob|githooks|sentinel)(/|\s|$|['"";&|])", I), "Command touches a protected directory."),
+        // ponytail: shell parsing is heuristic — real boundary is a sandbox; these rules catch the common agent patterns.
+        ("no-shell-write",
+            new(@"
+                # output redirection to a file (allow 2>&1 and >/dev/null)
+                (?<![2-9&])>{1,2}(?!\s*/dev/null)(?!\s*&)         # > or >> not preceded by fd digit/& and not to /dev/null or &N
+                |
+                # tee writing to a file
+                \btee\b(?!.*--help)
+                |
+                # in-place sed/perl
+                \bsed\s+(-[a-z]*i[a-z]*|--in-place)\b
+                |
+                \bperl\s+(-[a-z]*i[a-z]*|--in-place)\b
+                |
+                # dd writing to a file/device
+                \bdd\b.*\bof=
+                |
+                # file-copy/move/install
+                \b(cp|mv|install)\s
+            ", RegexOptions.IgnorePatternWhitespace | I),
+            "Writing files via shell redirection or copy commands is not allowed; use edit tools."),
     ];
 
     static readonly Regex WriteTool = new("write|edit|diff|insert|replace", I);
@@ -37,16 +58,24 @@ public static class Policy
     {
         var input = Input(payload);
         var tool = ToolName(payload);
+        var rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
 
         if (Str(input, "command") is { } cmd)
+        {
             foreach (var (rule, rx, reason) in CommandRules)
                 if (rx.IsMatch(cmd)) return new(false, rule, reason);
+
+            // outside-workspace-exec: deny commands that reference /tmp, /private/tmp or /var/folders
+            // unless every matched path is a prefix of (or inside) the workspace root.
+            // ponytail: shell parsing is heuristic — real boundary is a sandbox.
+            if (OutsideTempPaths(cmd, rootFull) is { } oteReason)
+                return new(false, "outside-workspace-exec", oteReason);
+        }
 
         var path = Str(input, "path") ?? Str(input, "file_path");
         if (path is null) return new(true);
 
         if (path.StartsWith('~')) return new(false, "outside-workspace", $"{path} is outside the workspace.");
-        var rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
         var full = Path.GetFullPath(Path.Combine(rootFull, path));
         // ponytail: lexical check, symlinks inside the repo can still escape; resolve LinkTarget if that matters.
         if (full != rootFull && !full.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.Ordinal))
@@ -72,6 +101,30 @@ public static class Policy
 
         return new(true);
     }
+
+    // Returns a denial reason if cmd references a temp path that is NOT inside rootFull; null if clean.
+    static string? OutsideTempPaths(string cmd, string rootFull)
+    {
+        // Extract all /tmp/…, /private/tmp/…, /var/folders/… tokens from the command.
+        var matches = TempPathTokenRx().Matches(cmd);
+        foreach (Match m in matches)
+        {
+            var p = m.Value.TrimEnd('/', '\\');
+            // Allow if the token is a prefix of the workspace root or the root is inside the token path.
+            if (rootFull.StartsWith(p, StringComparison.Ordinal) ||
+                rootFull.StartsWith(p + Path.DirectorySeparatorChar, StringComparison.Ordinal) ||
+                p == rootFull ||
+                p.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                continue;
+            return $"Command references {p} which is outside the workspace.";
+        }
+        return null;
+    }
+
+    // Matches /tmp/, /private/tmp/, /var/folders/ path tokens (up to whitespace or shell metachar).
+    // ponytail: shell parsing is heuristic — real boundary is a sandbox.
+    [GeneratedRegex(@"(/tmp|/private/tmp|/var/folders)/[^\s'"";&|]*", RegexOptions.IgnoreCase)]
+    private static partial Regex TempPathTokenRx();
 
     public static string? Str(JsonElement e, string name) =>
         e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;

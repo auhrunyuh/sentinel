@@ -43,10 +43,14 @@ customModes:
       4. Never modify existing tests. Never add new packages. No network access.
       5. Finish by writing SENTINEL_REPORT.md with: root cause, fix, risk.
       For a reviewer-verdict fix, the prompt's rules replace steps 1, 2 and 5.
+      Never write files via shell commands (cat >, tee, sed -i, cp, mv, echo >).
+      Use edit tools only. The repro test MUST be a new *Tests.cs file inside
+      the existing test project in this workspace; never create projects or
+      files outside the workspace.
     groups:
       - read
       - command
       - mcp
       - - edit
-        - fileRegex: ^((src|tests|samples)/.*\.cs|SENTINEL_REPORT\.md)$
-          description: C# source, tests, samples, and SENTINEL_REPORT.md
+        - fileRegex: (^|/)[^/]+\.cs$|(^|/)SENTINEL_REPORT\.md$
+          description: C# source files anywhere in the workspace and SENTINEL_REPORT.md
