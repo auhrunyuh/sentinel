@@ -1,0 +1,22 @@
+name: Sentinel Triage
+
+# Fires after CI finishes; only acts when it failed. Needs workflow_run (not
+# workflow_dispatch on the PR itself) because it must run with secrets even
+# when CI ran on a fork's untrusted head.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  triage:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: ./action
+        with:
+          bob-api-key: ${{ secrets.BOB_API_KEY }}

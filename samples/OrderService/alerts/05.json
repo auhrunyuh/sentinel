@@ -1,0 +1,13 @@
+{
+  "id": "ALR-2026-0905",
+  "title": "Charge rejected: negative amount after stacked discounts",
+  "exception": "OrderService.Payments.ChargeRejectedException",
+  "message": "Payment provider rejected amount -3.15 for orderId=9 (discounts: WELCOME5 fixed 5.00, SORRY8 fixed 8.00 on subtotal 10.00).",
+  "stack": [
+    "OrderService.Domain.Pricing.ApplyDiscounts in Pricing.cs:14",
+    "OrderService.Domain.Pricing.InvoiceTotal in Pricing.cs:21",
+    "Program.<Main>$ in Program.cs:38"
+  ],
+  "traceId": "9c56cc51b374c3ba189210d5b6d4bf57",
+  "occurredAt": "2026-09-24T15:02:09Z"
+}

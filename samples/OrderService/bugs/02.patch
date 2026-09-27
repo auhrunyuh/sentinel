@@ -1,0 +1,12 @@
+diff --git a/OrderService/Domain/Shipping.cs b/OrderService/Domain/Shipping.cs
+index 7cc7ecf..a48e79d 100644
+--- a/OrderService/Domain/Shipping.cs
++++ b/OrderService/Domain/Shipping.cs
+@@ -9,7 +9,6 @@ public static class Shipping
+ 
+     public static string Label(Customer customer)
+     {
+-        if (customer.Address is null) return $"{customer.Name}\nIN-STORE PICKUP";
+         var a = customer.Address;
+         return $"{customer.Name}\n{a.Street}\n{a.PostalCode} {a.City}\n{a.Country.ToUpperInvariant()}";
+     }

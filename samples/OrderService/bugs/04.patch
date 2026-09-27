@@ -1,0 +1,13 @@
+diff --git a/OrderService/Domain/QuantityParser.cs b/OrderService/Domain/QuantityParser.cs
+index 6b4b5d8..5f19693 100644
+--- a/OrderService/Domain/QuantityParser.cs
++++ b/OrderService/Domain/QuantityParser.cs
+@@ -7,7 +7,7 @@ public static class QuantityParser
+ {
+     public static decimal Parse(string raw)
+     {
+-        var q = decimal.Parse(raw.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture);
++        var q = decimal.Parse(raw.Trim(), NumberStyles.Number);
+         if (q <= 0) throw new FormatException($"quantity must be positive: '{raw}'");
+         return q;
+     }

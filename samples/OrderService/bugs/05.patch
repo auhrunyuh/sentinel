@@ -1,0 +1,13 @@
+diff --git a/OrderService/Domain/Pricing.cs b/OrderService/Domain/Pricing.cs
+index 2699122..5c1fdf7 100644
+--- a/OrderService/Domain/Pricing.cs
++++ b/OrderService/Domain/Pricing.cs
+@@ -11,7 +11,7 @@ public static class Pricing
+         var total = subtotal;
+         foreach (var d in discounts.OrderBy(d => d.Fixed)) // percentages first, then fixed amounts
+             total = total * (1 - d.Percent / 100m) - d.Fixed;
+-        return Math.Max(0m, total);
++        return total;
+     }
+ 
+     public static decimal RoundMoney(decimal amount) => Math.Round(amount, 2, MidpointRounding.AwayFromZero);

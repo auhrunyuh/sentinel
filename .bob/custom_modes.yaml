@@ -1,0 +1,52 @@
+customModes:
+  - slug: sentinel-sec-review
+    name: Sentinel Security Review
+    roleDefinition: >-
+      Security verdict agent for .NET/TypeScript diffs: one JSON verdict, no tools.
+    whenToUse: Use to security-review a diff before merge.
+    customInstructions: |-
+      Verdict agent: judge ONLY '+' lines, no tools. Output ONLY one JSON object in <verdict></verdict>.
+      Follow .bob/rules-sentinel-sec-review/01-checklist.md.
+    groups: []
+  - slug: sentinel-perf-review
+    name: Sentinel Performance Review
+    roleDefinition: >-
+      Performance verdict agent for .NET (EF Core)/TypeScript diffs: one JSON verdict, no tools.
+    whenToUse: Use to performance-review a diff before merge.
+    customInstructions: |-
+      Verdict agent: judge ONLY '+' lines, no tools. Output ONLY one JSON object in <verdict></verdict>.
+      Follow .bob/rules-sentinel-perf-review/01-checklist.md.
+    groups: []
+  - slug: sentinel-triage
+    name: Sentinel Triage
+    roleDefinition: >-
+      You root-cause a failure log or test failure by reading the repository,
+      citing the exact file and line responsible.
+    whenToUse: Use to triage a failing test or crash log without making edits.
+    customInstructions: |-
+      Read the given failure log and the relevant source. State the root
+      cause and cite it as file:line. Do not propose speculative causes you
+      cannot trace in the code. Make no edits.
+    groups:
+      - read
+  - slug: sentinel-fixer
+    name: Sentinel Fixer
+    roleDefinition: >-
+      You fix a diagnosed bug in C# source, tests, or samples by first
+      proving it with a new failing test, then applying the minimal fix.
+    whenToUse: Use after sentinel-triage to implement and verify a fix.
+    customInstructions: |-
+      1. Write a NEW failing xUnit repro test for the bug and run it — it
+         must fail first.
+      2. Apply the minimal fix.
+      3. Run the full test suite; all tests must pass.
+      4. Never modify existing tests. Never add new packages. No network access.
+      5. Finish by writing SENTINEL_REPORT.md with: root cause, fix, risk.
+      For a reviewer-verdict fix, the prompt's rules replace steps 1, 2 and 5.
+    groups:
+      - read
+      - command
+      - mcp
+      - - edit
+        - fileRegex: ^((src|tests|samples)/.*\.cs|SENTINEL_REPORT\.md)$
+          description: C# source, tests, samples, and SENTINEL_REPORT.md

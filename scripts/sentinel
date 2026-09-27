@@ -1,0 +1,14 @@
+#!/bin/sh
+# ponytail: no build/watch logic here — assumes `dotnet build -c Release` was run separately.
+ROOT="${SENTINEL_HOME:-$(git -C "$(dirname "$0")" rev-parse --show-toplevel)}"
+DLL="$ROOT/src/Sentinel.Cli/bin/Release/net10.0/sentinel.dll"
+
+if [ ! -f "$DLL" ]; then
+  echo "sentinel not built: dotnet build -c Release" >&2
+  if [ "$SENTINEL_POLICY" = "audit" ]; then
+    exit 1
+  fi
+  exit 2
+fi
+
+exec dotnet "$DLL" "$@"

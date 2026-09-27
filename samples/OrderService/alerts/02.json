@@ -1,0 +1,13 @@
+{
+  "id": "ALR-2026-0902",
+  "title": "500 on GET /orders/{id}/label",
+  "exception": "System.NullReferenceException",
+  "message": "Object reference not set to an instance of an object. (orderId=2, customerId=2)",
+  "stack": [
+    "OrderService.Domain.Shipping.Label in Shipping.cs:13",
+    "Program.<Main>$ in Program.cs:24",
+    "Microsoft.AspNetCore.Http.RequestDelegateFactory.ExecuteTaskResult in RequestDelegateFactory.cs:2512"
+  ],
+  "traceId": "0af7651916cd43dd8448eb211c80319c",
+  "occurredAt": "2026-09-24T09:03:17Z"
+}

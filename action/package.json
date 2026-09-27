@@ -1,0 +1,19 @@
+{
+  "name": "sentinel-triage",
+  "version": "0.0.1",
+  "private": true,
+  "description": "GitHub Action: on CI failure, run Bob (read-only) over the failed log and post a root-cause PR comment.",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --platform=node --target=node20 --outfile=dist/index.js"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@actions/exec": "^1.1.1",
+    "@actions/github": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}

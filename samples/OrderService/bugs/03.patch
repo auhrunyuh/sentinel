@@ -1,0 +1,13 @@
+diff --git a/OrderService/Domain/Pricing.cs b/OrderService/Domain/Pricing.cs
+index 2699122..5d38e3d 100644
+--- a/OrderService/Domain/Pricing.cs
++++ b/OrderService/Domain/Pricing.cs
+@@ -14,7 +14,7 @@ public static class Pricing
+         return Math.Max(0m, total);
+     }
+ 
+-    public static decimal RoundMoney(decimal amount) => Math.Round(amount, 2, MidpointRounding.AwayFromZero);
++    public static decimal RoundMoney(decimal amount) => Math.Round(amount, 2);
+ 
+     public static decimal InvoiceTotal(Order order)
+     {

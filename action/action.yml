@@ -1,0 +1,21 @@
+name: "sentinel-triage"
+description: "On CI failure, collect the failed job log, run Bob in read-only triage mode, and post a root-cause comment on the PR."
+inputs:
+  bob-api-key:
+    description: "BOB_API_KEY with Inference scope"
+    required: true
+  github-token:
+    description: "Token used for `gh run view` and posting the PR comment"
+    required: false
+    default: ${{ github.token }}
+  max-cost:
+    description: "Bobcoin budget for this triage run"
+    required: false
+    default: "0.5"
+  mode:
+    description: "Bob custom mode to run"
+    required: false
+    default: "sentinel-triage"
+runs:
+  using: "node20"
+  main: "dist/index.js"

@@ -1,0 +1,13 @@
+{
+  "id": "ALR-2026-0901",
+  "title": "Orders list: last page unreachable (page reported out of range)",
+  "exception": "OrderService.Monitoring.PaginationAnomaly",
+  "message": "GET /orders?page=3&size=10 returned items while response TotalPages=2 (orderCount=23). Clients stop paging at TotalPages and never show the final orders.",
+  "stack": [
+    "OrderService.Domain.Paging.TotalPages in Paging.cs:7",
+    "OrderService.Domain.Paging.Paginate in Paging.cs:14",
+    "Program.<Main>$ in Program.cs:17"
+  ],
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "occurredAt": "2026-09-24T08:12:41Z"
+}

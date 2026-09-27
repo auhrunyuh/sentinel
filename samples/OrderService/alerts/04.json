@@ -1,0 +1,12 @@
+{
+  "id": "ALR-2026-0904",
+  "title": "Order quantities 10x too large on de-DE hosts",
+  "exception": "OrderService.Monitoring.QuantityAnomaly",
+  "message": "POST /orders/{id}/items?qty=1.5 stored quantity 15 (host culture de-DE). Only nodes in eu-central-1 affected.",
+  "stack": [
+    "OrderService.Domain.QuantityParser.Parse in QuantityParser.cs:10",
+    "Program.<Main>$ in Program.cs:30"
+  ],
+  "traceId": "e3b0c44298fc1c149afbf4c8996fb924",
+  "occurredAt": "2026-09-24T13:20:55Z"
+}

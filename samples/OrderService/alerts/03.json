@@ -1,0 +1,13 @@
+{
+  "id": "ALR-2026-0903",
+  "title": "Invoice total mismatch vs payment provider (1 cent)",
+  "exception": "OrderService.Billing.ReconciliationMismatchException",
+  "message": "Invoice total 0.52 but provider captured 0.53 for orderId=17 (net=0.50, tax=5%). 38 invoices off by 0.01 in last 24h.",
+  "stack": [
+    "OrderService.Domain.Pricing.RoundMoney in Pricing.cs:17",
+    "OrderService.Domain.Pricing.InvoiceTotal in Pricing.cs:22",
+    "Program.<Main>$ in Program.cs:20"
+  ],
+  "traceId": "b7ad6b7169203331a1c2e4f8d9e0a7b3",
+  "occurredAt": "2026-09-24T11:45:02Z"
+}

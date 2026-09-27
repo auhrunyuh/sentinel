@@ -1,0 +1,13 @@
+diff --git a/OrderService/Domain/Paging.cs b/OrderService/Domain/Paging.cs
+index 76cbae4..33e5eff 100644
+--- a/OrderService/Domain/Paging.cs
++++ b/OrderService/Domain/Paging.cs
+@@ -4,7 +4,7 @@ public sealed record Page<T>(IReadOnlyList<T> Items, int PageNumber, int PageSiz
+ 
+ public static class Paging
+ {
+-    public static int TotalPages(int count, int pageSize) => (count + pageSize - 1) / pageSize;
++    public static int TotalPages(int count, int pageSize) => count / pageSize;
+ 
+     public static Page<T> Paginate<T>(IReadOnlyList<T> source, int pageNumber, int pageSize)
+     {
