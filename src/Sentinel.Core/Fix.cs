@@ -126,11 +126,11 @@ public static class Fix
     {
         var sb = new StringBuilder($"# Sentinel fix{(r.AlertId is null ? "" : $" ({r.AlertId})")}: {(r.Pass ? "PASS" : "FAIL")}\n\n");
         if (r.Gate is not null) sb.Append(Gate.ToMarkdown(r.Gate)).Append('\n');
-        sb.Append($"## Cost\n\nTotal ${r.TotalCost:0.####} over {r.Attempts.Count} attempt(s), base `{r.BaseSha[..Math.Min(12, r.BaseSha.Length)]}`\n\n");
+        sb.Append($"## Cost\n\nTotal {r.TotalCost:0.####} Bobcoins over {r.Attempts.Count} attempt(s), base `{r.BaseSha[..Math.Min(12, r.BaseSha.Length)]}`\n\n");
         for (var i = 0; i < r.Attempts.Count; i++)
         {
             var a = r.Attempts[i];
-            sb.Append($"- attempt {i + 1}: ${a.Cost:0.####}, {a.Tokens} tokens, {a.DurationMs} ms, gate {(a.GatePass ? "pass" : "FAIL")}\n");
+            sb.Append($"- attempt {i + 1}: {a.Cost:0.####} Bobcoins, {a.Tokens} tokens, {a.DurationMs} ms, gate {(a.GatePass ? "pass" : "FAIL")}\n");
             if (a.BobError is not null) sb.Append($"  bob error:\n  ```\n  {a.BobError.Replace("\n", "\n  ")}\n  ```\n");
         }
         if (r.Report is not null) sb.Append($"\n## {ReportFile}\n\n").Append(r.Report.TrimEnd()).Append('\n');

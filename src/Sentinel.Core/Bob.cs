@@ -45,7 +45,7 @@ public static class Bob
                 var ok = Str(e, "status") == "success";
                 var stats = e.TryGetProperty("stats", out var s) && s.ValueKind == JsonValueKind.Object ? s : default;
                 return new(ok, Str(e, "last_message") ?? "",
-                    Num(stats, "session_costs"), (long)Num(stats, "total_tokens"), (long)Num(stats, "duration_ms"),
+                    Num(stats, "session_costs"), TotalTokens(stats), (long)Num(stats, "duration_ms"),
                     ok ? null : Str(e, "error") ?? Str(e, "last_message") ?? "bob reported error",
                     Str(stats, "task_id"));
             }
@@ -69,4 +69,19 @@ public static class Bob
     static double Num(JsonElement e, string name) =>
         e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number
             ? v.GetDouble() : 0;
+
+    /// <summary>total_tokens if present, else input+output, else sum of any other "*_tokens" field (excluding cache_*).</summary>
+    static long TotalTokens(JsonElement stats)
+    {
+        var total = Num(stats, "total_tokens");
+        if (total != 0) return (long)total;
+        var io = Num(stats, "input_tokens") + Num(stats, "output_tokens");
+        if (io != 0) return (long)io;
+        if (stats.ValueKind != JsonValueKind.Object) return 0;
+        double sum = 0;
+        foreach (var p in stats.EnumerateObject())
+            if (p.Value.ValueKind == JsonValueKind.Number && p.Name.EndsWith("_tokens") && !p.Name.StartsWith("cache_"))
+                sum += p.Value.GetDouble();
+        return (long)sum;
+    }
 }

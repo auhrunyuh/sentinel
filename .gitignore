@@ -4,3 +4,103 @@ obj/
 node_modules/
 .DS_Store
 SENTINEL_REPORT.md
+
+# ============================================
+# WATSONX HACKATHON TEMPLATE - APPENDED PATTERNS
+# ============================================
+
+# AI assistant session files
+.copilot/
+.cursor/
+.codeium/
+
+# Environment files
+.env
+.env.*
+!.env.example
+*.env
+env.local
+.env.local
+.env.*.local
+
+# IBM Cloud credentials
+ibmcloud-credentials.json
+ibm-credentials.env
+*-credentials.json
+*apikey*
+*api-key*
+*api_key*
+
+# Configuration files with credentials
+config.json
+config.yaml
+config.yml
+secrets.json
+secrets.yaml
+secrets.yml
+credentials.json
+credentials.yaml
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+id_rsa
+id_dsa
+*.ppk
+
+# Generic credential patterns
+*credentials*
+*secret*
+*password*
+*token*
+
+# Database credentials
+database.yml
+database.json
+db-config.*
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Java
+*.class
+*.jar
+*.war
+target/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+!action/dist/
+build/
+*.log
+
+# Backup files
+*.bak
+*.tmp
+*.temp
+.backup/

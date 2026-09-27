@@ -57,6 +57,16 @@ public class SentinelTests
     }
 
     [Fact]
+    public void ParseResult_FallsBackToTokenSumWhenTotalMissing()
+    {
+        // No total_tokens, no input+output_tokens: sum other *_tokens fields, excluding cache_*.
+        var r = Bob.ParseResult("""
+            {"type":"result","status":"success","stats":{"session_costs":0.05,"cache_read_tokens":999,"reasoning_tokens":100,"tool_tokens":50,"duration_ms":10},"last_message":"done"}
+            """);
+        Assert.Equal(150L, r.Tokens);
+    }
+
+    [Fact]
     public async Task RunAsync_NoResultLine_ErrorHasExitCodeAndOutput()
     {
         var root = Directory.CreateTempSubdirectory().FullName;

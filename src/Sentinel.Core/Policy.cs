@@ -85,6 +85,9 @@ public static class Audit
 
     public static string PathFor(string root) => Path.Combine(root, ".sentinel", "audit.jsonl");
 
+    // Largest audit entry is ~1 KB; read the last 4 KB to find the previous hash without scanning the whole file.
+    const int TailBytes = 4096;
+
     public static void Append(string root, object evt)
     {
         var file = PathFor(root);
@@ -95,10 +98,17 @@ public static class Audit
             try
             {
                 using var fs = new FileStream(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-                // ponytail: reads the whole log to find the last hash; tail-seek if the log grows large.
-                var existing = new StreamReader(fs, leaveOpen: true).ReadToEnd();
-                var last = existing.Split('\n', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
-                var prev = last is null ? Genesis : JsonDocument.Parse(last).RootElement.GetProperty("hash").GetString()!;
+                string? prev = null;
+                if (fs.Length > 0)
+                {
+                    var readFrom = Math.Max(0, fs.Length - TailBytes);
+                    fs.Seek(readFrom, SeekOrigin.Begin);
+                    var tail = new StreamReader(fs, leaveOpen: true).ReadToEnd();
+                    var last = tail.Split('\n', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+                    if (last is not null)
+                        prev = JsonDocument.Parse(last).RootElement.GetProperty("hash").GetString();
+                }
+                prev ??= Genesis;
                 var ts = JsonSerializer.Serialize(DateTimeOffset.UtcNow);
                 var line = $"{{\"ts\":{ts},\"event\":{eventJson},\"prev\":\"{prev}\",\"hash\":\"{Hash(prev, ts, eventJson)}\"}}\n";
                 fs.Seek(0, SeekOrigin.End);

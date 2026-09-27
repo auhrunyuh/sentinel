@@ -13,19 +13,21 @@ return args switch
     ["audit", "verify"] => VerifyAudit(),
     ["gate", .. var rest] => await GateCmd(rest),
     ["fix", .. var rest] => await FixCmd(rest),
+    ["eval"] => await EvalCmd(),
     _ => Usage(),
 };
 
 int Usage()
 {
     Console.Error.WriteLine("""
-        usage: sentinel review [--staged] [--base <ref>] [--llm] [--threshold 0.8]
+        usage: sentinel review [--staged] [--base <ref>] [--llm] [--threshold 0.8] [--no-cache]
                       [--autofix --project <test project|sln> [--max-cost 2] [--max-turns 40] [--attempts 2]]
                sentinel hook pre-tool|post-tool|stop   (hook payload on stdin)
                sentinel watch [--llm]
                sentinel audit verify
                sentinel gate --base <ref> [--project <dir>] [--max-lines 150] [--max-files 5]
                sentinel fix --alert <alert.json> --project <test project|sln> [--max-cost 2] [--max-turns 40] [--attempts 2]
+               sentinel eval
         """);
     return 64;
 }
@@ -39,7 +41,7 @@ async Task<int> ReviewCmd(string[] a)
     if (autofix && project is null) { Console.Error.WriteLine("sentinel: review --autofix needs --project <test project|sln>"); return 64; }
     var threshold = double.Parse(Opt("--threshold") ?? "0.8", ic);
     var diff = Diff.Working(root, Opt("--base"), a.Contains("--staged"));
-    var report = await RunReview(diff, a.Contains("--llm"), threshold);
+    var report = await RunReview(diff, a.Contains("--llm"), threshold, forceRefresh: a.Contains("--no-cache"));
     Console.Write(Review.ToMarkdown(report, threshold));
 
     if (!autofix || report.Verdicts.FirstOrDefault(v => Review.ShouldRoute(v, threshold)) is not { } routed) return report.Blocking ? 1 : 0;
@@ -83,6 +85,7 @@ int PreTool()
 
 int PostTool()
 {
+    var enforce = Environment.GetEnvironmentVariable("SENTINEL_POLICY") != "audit";
     try
     {
         using var doc = JsonDocument.Parse(Console.In.ReadToEnd());
@@ -91,7 +94,10 @@ int PostTool()
         var findings = SecretScanner.Scan(Diff.AddedLines(Diff.Working(root, path: p)));
         if (findings.Count == 0) return 0;
         Audit.Append(root, new { kind = "post-tool", path = p, findings });
-        foreach (var f in findings) Console.Error.WriteLine($"sentinel: {f.Severity} {f.Rule} {f.File}:{f.Line} {f.Message}");
+        var blocking = findings.Any(f => f.Severity >= Severity.High);
+        foreach (var f in findings) Console.Error.WriteLine($"sentinel: {(blocking && enforce ? "DENIED" : "WARNING")} [{f.Rule}] {f.Severity} {f.File}:{f.Line} {f.Message}");
+        if (blocking) Console.Error.WriteLine($"sentinel: post-tool: {(enforce ? "DENIED" : "would deny (audit-only)")} — secret found in written file; rotate it and move to env/vault");
+        return blocking && enforce ? 2 : 0;
     }
     catch (Exception e) { Console.Error.WriteLine($"sentinel: post-tool scan failed: {e.Message}"); }
     return 0;
@@ -156,9 +162,9 @@ int VerifyAudit()
     return ok ? 0 : 1;
 }
 
-async Task<ReviewReport> RunReview(string diff, bool llm, double threshold = 0.8, CancellationToken ct = default)
+async Task<ReviewReport> RunReview(string diff, bool llm, double threshold = 0.8, bool forceRefresh = false, CancellationToken ct = default)
 {
-    var report = await Review.RunAsync(root, diff, new(Llm: llm, Threshold: threshold), ct);
+    var report = await Review.RunAsync(root, diff, new(Llm: llm, Threshold: threshold, ForceRefresh: forceRefresh), ct);
     Save("review.json", JsonSerializer.Serialize(report, Json.Options));
     return report;
 }
@@ -203,6 +209,15 @@ async Task<int> FixCmd(string[] a)
     Save("fix.json", JsonSerializer.Serialize(r, Json.Options));
     Audit.Append(root, new { kind = "fix", alert = r.AlertId, r.BaseSha, r.Pass, r.TotalCost, attempts = r.Attempts.Count });
     return r.Pass ? 0 : 1;
+}
+
+async Task<int> EvalCmd()
+{
+    var r = await Eval.RunAsync(root);
+    var md = Eval.ToMarkdown(r);
+    Console.Write(md);
+    Save("eval.json", JsonSerializer.Serialize(r, Json.Options));
+    return r.AuditIntegrity ? 0 : 1;
 }
 
 void Save(string name, string content)

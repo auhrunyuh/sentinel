@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Sentinel.Core;
 
-public sealed record ReviewOptions(bool Llm = false, double MaxCost = 0.5, int MaxTurns = 1, int MaxDiffChars = 60000, double Threshold = 0.8);
+public sealed record ReviewOptions(bool Llm = false, double MaxCost = 0.5, int MaxTurns = 1, int MaxDiffChars = 60000, double Threshold = 0.8, bool ForceRefresh = false);
 public sealed record ReviewerRun(string Reviewer, bool Ok, bool Cached, double Cost, long Tokens, long DurationMs, string? Error);
 /// <param name="Kind">clean | leak | vuln | slow</param>
 public sealed record Verdict(string Reviewer, string Kind, double Confidence, string File, int Line, string Rule);
@@ -37,6 +37,11 @@ public static class Review
             var results = await Task.WhenAll(Reviewers.Select(r => RunOne(root, r.Name, r.Mode, Prompt(d), opt, ct)));
             foreach (var (run, v) in results) { runs.Add(run); verdicts.Add(v); }
         }
+
+        // Surface slow verdicts as Medium findings so they appear in watch, stop-hook, and audit consistently.
+        foreach (var v in verdicts.Where(v => v.Kind == "slow" && v.Confidence >= opt.Threshold))
+            findings.Add(new("performance", v.Rule, Severity.Medium, v.File, v.Line,
+                $"Performance issue flagged by {v.Reviewer} reviewer (confidence {v.Confidence:0.##})."));
 
         return new(findings, verdicts, runs,
             findings.Any(f => f.Severity >= Severity.High) || verdicts.Any(v => ShouldRoute(v, opt.Threshold)));
@@ -88,7 +93,7 @@ public static class Review
         }
         catch (JsonException) { }
 
-        if (res is null)
+        if (res is null || opt.ForceRefresh)
         {
             res = await Bob.RunAsync(root, mode, prompt, opt.MaxCost, opt.MaxTurns,
                 new Dictionary<string, string> { ["SENTINEL_REVIEWER"] = "1" }, ct: ct);
@@ -124,7 +129,7 @@ public static class Review
         {
             sb.AppendLine().AppendLine("## Reviewers").AppendLine();
             foreach (var x in r.Runs)
-                sb.AppendLine($"- {x.Reviewer}: {(x.Ok ? "ok" : "FAILED")}{(x.Cached ? " (cached)" : "")}, ${x.Cost:0.####}, {x.Tokens} tokens, {x.DurationMs} ms{(x.Error is null ? "" : $" - {x.Error}")}");
+                sb.AppendLine($"- {x.Reviewer}: {(x.Ok ? "ok" : "FAILED")}{(x.Cached ? " (cached)" : "")}, {x.Cost:0.####} Bobcoins, {x.Tokens} tokens, {x.DurationMs} ms{(x.Error is null ? "" : $" - {x.Error}")}");
         }
         return sb.ToString();
     }
